@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="citeproc.js"></script>
+<script>
+// var citation1 = {
+//   title: 'jeffspaper'
+// }
+
+var chosenLibraryItems = "https://api.zotero.org/groups/459003/items?format=csljson&limit=6&itemType=journalArticle";
+// Chicago Manual of Style (Full Note)
+var chosenStyleID = "chicago-fullnote-bibliography";
+
+// Fetch citation data
+var xhr = new XMLHttpRequest();
+xhr.open('GET', chosenLibraryItems, false);
+xhr.send(null);
+var citationData = JSON.parse(xhr.responseText);
+
+// Refactor citation data for keyed access
+var citations = {};
+var itemIDs = [];
+for (var i=0,ilen=citationData.items.length;i<ilen;i++) {
+  var item = citationData.items[i];
+  if (!item.issued) continue;
+  if (item.URL) delete item.URL;
+  var id = item.id;
+  citations[id] = item;
+  itemIDs.push(id);
+}
+
+// Initialize a system object
+citeprocSys = {
+  retrieveLocale: function (lang){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'https://raw.githubusercontent.com/Juris-M/citeproc-js-docs/master/locales-' + lang + '.xml', false);
+    xhr.send(null);
+    return xhr.responseText;
+  },
+  retrieveItem: function(id){
+    return citations[id];
+  }
+};
+
+// Instantiate processor
+function getProcessor(styleID) {
+  // Get the CSL style as a serialized string of XML
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'https://raw.githubusercontent.com/citation-style-language/styles/master/' + styleID + '.csl', false);
+  xhr.send(null);
+  var styleAsText = xhr.responseText;
+  var citeproc = new CSL.Engine(citeprocSys, styleAsText);
+  return citeproc;
+};
+
+
+// This runs at document ready, and renders the bibliography
+function processorOutput() {
+  ret = '';
+  var citeproc = getProcessor(chosenStyleID);
+  citeproc.updateItems(itemIDs);
+  var bibResult = citeproc.makeBibliography();
+  return bibResult[1].join('\n');
+}
+
+function toggleCslDiv() {
+  var button = document.getElementById('csl-cites-button');
+  var target = document.getElementById("csl-inner-block");
+  var content = document.getElementById("csl-content-block");
+  if (target.classList.contains('csl-hide')) {
+    content.innerHTML = processorOutput();
+    target.classList.remove('csl-hide');
+    target.classList.remove('csl-show');
+    target.classList.add('csl-show');
+    button.innerHTML = "Hide citations";
+  } else {
+    target.classList.remove('csl-show');
+    target.classList.remove('csl-hide');
+    target.classList.add('csl-hide');
+    //content.innerHTML = '';
+    button.innerHTML = "Generate citations";
+  }
+}
+
+
+
+</script>
+</head>
+<style>
+#integrator-notes li {
+    margin-bottom: 1em;
+    background: #efefef;
+    padding: 0.5em;
+    border-radius: 0.5em;
+}
+
+.citation {
+    background: #dddddd;
+}
+#csl-outer-block {
+  margin-top: 200px;
+    position: absolute;
+    height: 0px;
+    max-width: 40em;
+}
+#csl-inner-block {
+    max-width: 40em;
+    height: 15em;
+    position: relative;
+    bottom: 17em;
+    left: 2em;
+}
+#csl-content-block {
+    background:white;
+    border: solid black 1px;
+    overflow-y: scroll;
+    padding: 0.5em;
+}
+.csl-hide {
+    -webkit-opacity: 0;
+    -moz-opacity: 0;
+    opacity: 0;
+    -webkit-transition: all 0.75s ease;
+    -moz-transition: all 0.75s ease;
+    -ms-transition: all 0.75s ease;
+    -o-transition: all 0.75s ease;
+    transition: all 0.75s ease;
+    -webkit-transition-delay: 0.25s;
+    -moz-transition-delay: 0.25s;
+    -ms-transition-delay: 0.25s;
+    -o-transition-delay: 0.25s;
+    transition-delay: 0.25s;
+}
+.csl-show {
+    -webkit-opacity: 100;
+    -moz-opacity: 100;
+    opacity: 100;
+    -webkit-transition: all 0.75s ease;
+    -moz-transition: all 0.75s ease;
+    -ms-transition: all 0.75s ease;
+    -o-transition: all 0.75s ease;
+    transition: all 0.75s ease;
+}
+.csl-entry {
+    margin-bottom: 0.5em;
+}
+.csl-left-margin {
+    vertical-align: top;
+    right: 0.3em;
+    top: 0px;
+}
+#dynamic-editing, #my-amazing-bibliography {
+    padding:1em;
+    border: 1px solid #999999;
+    background: #efefef;
+    border-radius: 1em;
+    margin-bottom: 1em;
+}
+#dynamic-editing p {
+    line-height: 2em;
+}
+.citeme {
+    display: inline;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #aaaaaa;
+    border-radius: 2px;
+    margin: 0px 5px 0px 2px;
+    padding: 0px 2px 0px 2px;
+}
+#cite-menu {
+    position: absolute;
+    display: inline-block;
+}
+#cite-menu .menu {
+    position: relative;
+    top: 0px;
+    /* left: 0px; */
+    width: 135px;
+    background: white;
+    padding: 0.5em;
+    border: 1px solid black;
+    border-radius: 0.5em;
+    z-index: 100;
+}
+</style>
+<body>
+
+  <div class="section" id="my-amazing-bibliography">
+  <h2>My Amazing Bibliography</h2>
+  <p>
+  <div id="csl-outer-block">
+    <div id="csl-inner-block" class="csl-hide">
+      <div id="csl-content-block"></div>
+    </div>
+  </div>
+  <button id="csl-cites-button" onclick="toggleCslDiv();">Generate citations</button></p>
+  </div>
+
+</body>
+</html>
