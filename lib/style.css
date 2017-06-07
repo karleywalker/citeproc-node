@@ -9,19 +9,25 @@
     background: #dddddd;
 }
 #csl-outer-block {
-  margin-top: 200px;
-    position: absolute;
-    height: 0px;
     max-width: 40em;
 }
 #csl-inner-block {
     max-width: 40em;
-    height: 15em;
-    position: relative;
     bottom: 17em;
     left: 2em;
 }
 #csl-content-block {
+    background:white;
+    border: solid black 1px;
+    overflow-y: scroll;
+    padding: 0.5em;
+}
+
+.json-data {
+    width: 40em;
+    height:500px;
+    bottom: 17em;
+    left: 2em;
     background:white;
     border: solid black 1px;
     overflow-y: scroll;
