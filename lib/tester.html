@@ -10,9 +10,6 @@
 <body>
   <div class="section" id="my-amazing-bibliography">
     <h2>My Amazing Bibliography</h2>
-    <!-- <p>
-      <button id="csl-cites-button" onclick="toggleCslDiv();">Generate citations</button>
-    </p> -->
   </div>
   <div class="container">
     <div class="row">
@@ -111,30 +108,23 @@
         </textarea>
       </div>
     </div>
-    <!-- <button type="button" onclick="myFunction()">Try it</button>
-    <p id="demo"></p> -->
+    <button type="button" onclick="updatesCitations()">Update</button>
   </div>
 
 <script>
-// var citation1 = {
-//   title: 'jeffspaper'
-// }
 
-//var chosenLibraryItems = "https://api.zotero.org/groups/459003/items?format=csljson&limit=6&itemType=journalArticle";
-// function myFunction() {
-//     var chosenLibraryItems = document.getElementById("json-text").value;
-//     document.getElementById("demo").innerHTML = chosenLibraryItems;
-// }
+// $(document).ready(function(){
+//   $.get("https://osf.io/api/v1/project/a6pu9/citation/", function(data) {
+//     console.log(data);
+//   })
+// })
 
+var newCite = document.getElementById("json-text").value;
+// function invokeCiteProc() {
+var citationData = JSON.parse(newCite);
 
 // Chicago Manual of Style (Full Note)
 var chosenStyleID = "chicago-fullnote-bibliography";
-
-// Fetch citation data
-// var xhr = new XMLHttpRequest();
-// xhr.open('GET', chosenLibraryItems, false);
-// xhr.send(null);
-var citationData = JSON.parse(document.getElementById("json-text").value);
 
 // Refactor citation data for keyed access
 var citations = {};
@@ -181,33 +171,41 @@ function processorOutput() {
   var bibResult = citeproc.makeBibliography();
   return bibResult[1].join('\n');
 }
-
-// function toggleCslDiv() {
-//   var button = document.getElementById('csl-cites-button');
-//   var target = document.getElementById("csl-inner-block");
-//   var content = document.getElementById("csl-content-block");
-//   if (target.classList.contains('csl-hide')) {
-//     content.innerHTML = processorOutput();
-//     target.classList.remove('csl-hide');
-//     target.classList.remove('csl-show');
-//     target.classList.add('csl-show');
-//     button.innerHTML = "Hide citations";
-//   }
-//   else {
-//     content.innerHTML = processorOutput();
-//
-//     target.classList.remove('csl-show');
-//     target.classList.remove('csl-hide');
-//     target.classList.add('csl-hide');
-//     //content.innerHTML = '';
-//     button.innerHTML = "Generate citations";
-//   }
-//}
 </script>
 
 <script>
   var content = document.getElementById("csl-content-block");
   content.innerHTML = processorOutput();
+
+  function updatesCitations() {
+    var newCite = document.getElementById("json-text").value;
+    var citationData = JSON.parse(newCite);
+    // Refactor citation data for keyed access
+    var citations = {};
+    var itemIDs = [];
+    for (var i=0,ilen=citationData.items.length;i<ilen;i++) {
+      var item = citationData.items[i];
+      if (!item.issued) continue;
+      if (item.URL) delete item.URL;
+      var id = item.id;
+      citations[id] = item;
+      itemIDs.push(id);
+    }
+
+    citeprocSys = {
+      retrieveLocale: function (lang){
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://raw.githubusercontent.com/Juris-M/citeproc-js-docs/master/locales-' + lang + '.xml', false);
+        xhr.send(null);
+        return xhr.responseText;
+      },
+      retrieveItem: function(id){
+        return citations[id];
+      }
+    };
+    var contentblock = document.getElementById("csl-content-block");
+    contentblock.innerHTML = processorOutput();
+  }
 </script>
 </body>
 </html>
